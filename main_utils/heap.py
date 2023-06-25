@@ -1,4 +1,5 @@
 from typing import Tuple, TypeVar, Generic
+import random
 
 T = TypeVar('T')
 
@@ -26,6 +27,25 @@ class Heap(Generic[T]):
         if self.size == 0:
             return None
         return self.arr[0]
+    
+    def build_heap(self, items: list[T], keys: dict[T, int]=None, tie_breaks: dict[T, int]=None):
+        self.arr = items
+
+        if keys == None:
+            self.keys = {k: k for k in items}
+        else:
+            self.keys = keys.copy()
+
+        if tie_breaks == None:
+            self.tie_breaks = keys.copy()
+        else:
+            self.tie_breaks = tie_breaks.copy()
+        
+        self.index = {k: v for v, k in enumerate(items)}
+        
+        for r in range((len(items) // 2), -1, -1):
+            self.heapify_down(r)
+        return
     
     def compare_items(self, item_1: T, item_2: T):
         if self.order == "max":
@@ -89,6 +109,9 @@ class Heap(Generic[T]):
         return
 
     def extract_lead(self) -> Tuple[T, int]:
+        '''
+        Return Item, Key
+        '''
         arr_size = len(self.arr)
 
         if arr_size == 0:
@@ -171,6 +194,10 @@ class Heap(Generic[T]):
             print(self.keys)
             return
         
+        if len(self.arr) == 0:
+            print("heap empty")
+            return False
+        
         if len(self.arr) != len(self.keys.keys()) and len(self.arr) != len(self.index.keys()):
             report()
             return False
@@ -190,7 +217,7 @@ class Heap(Generic[T]):
             arr_size = len(self.arr)
             
             parent_node = self.arr[parent_idx]
-
+            
             if lchild_idx > arr_size -1:
                 continue
             
@@ -203,9 +230,9 @@ class Heap(Generic[T]):
                 report()
                 return False
 
-            right_key = self.keys[self.arr[rchild_idx]]
+            right_node = self.arr[rchild_idx]
             
-            if self.compare_items(parent_node, left_node) and self.compare_items(parent_node, right_key):
+            if self.compare_items(parent_node, left_node) and self.compare_items(parent_node, right_node):
                 nodeStack.append(lchild_idx)
                 nodeStack.append(rchild_idx)
             else:
@@ -214,14 +241,20 @@ class Heap(Generic[T]):
 
         return True
     
-    def test_heap(self):
-        
-        for i in [2, 5, 3, 8, 9, 7, 4, 11, 1, 40, 23, 41, 52, 15, 13]:
-            self.insert(i)
+    def test_heap(self, num_items: int = 500):
+        self.__init__()
+
+        random_inserts = random.sample(range(1, num_items*3), num_items)
+        random_keys = {k: random.random() for k in random_inserts}
+
+        self.build_heap(
+            random_inserts,
+            random_keys
+        )
         
         print(f'Insert: {"PASSED" if self.validate() else "FAILED"}')
         
-        for i in [3, 8, 7, 1, 11, 23, 15]:
+        for i in random.sample(random_inserts, num_items // 2):
             self.delete(i)
 
         print(f'Delete: {"PASSED" if self.validate() else "FAILED"}')
