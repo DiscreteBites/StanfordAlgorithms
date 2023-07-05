@@ -1,5 +1,6 @@
 from typing import Tuple, TypeVar, Generic
 import random
+import numpy as np
 
 T = TypeVar('T')
 
@@ -165,6 +166,7 @@ class Heap(Generic[T]):
             self.arr.pop()
             self.index.pop(item)
             self.keys.pop(item)
+            self.tie_breaks.pop(item)
             
             return
 
@@ -261,3 +263,43 @@ class Heap(Generic[T]):
         
         self.extract_lead()
         print(f'Extract Lead: {"PASSED" if self.validate() else "FAILED"}')
+
+def dijkstra(g: dict[int, list[Tuple[int, int]]], startNode: int):
+    '''
+    Runs Dijkstras on a graph g from a given start node
+
+    g = { tail: (head, cost) }
+
+    Returns (closest node, edge), { node: score }
+    '''
+    nodeHeap = Heap[int](type="min")
+    processedNodes = {1: 0}
+    closest_node = None
+
+    for tail, edges in g.items():
+        if tail == startNode:
+            for edge in edges:
+                head, weight = edge
+                nodeHeap.insert(head, weight)
+        elif tail not in nodeHeap:
+            nodeHeap.insert(tail, np.Inf)
+
+    while len(processedNodes.keys()) < len(g.keys()):
+        
+        greedy_node, greedy_score = nodeHeap.extract_lead()
+        processedNodes[greedy_node] = greedy_score
+
+        if closest_node is None or greedy_score < closest_node[1]:
+            closest_node = (greedy_node, greedy_score)
+        
+        for edge in g[greedy_node]:
+            head, weight = edge
+            
+            if head in nodeHeap:
+                old_key = nodeHeap.keys[head]
+                nodeHeap.delete(head)
+                
+                new_key = min(old_key, greedy_score + weight)
+                nodeHeap.insert(head, new_key)
+    
+    return closest_node, processedNodes
