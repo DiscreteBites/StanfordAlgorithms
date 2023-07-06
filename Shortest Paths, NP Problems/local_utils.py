@@ -13,4 +13,4 @@ parent = os.path.dirname(current)
 # the sys.path.
 sys.path.append(parent)
 
-from main_utils import Heap, dijkstra
+from main_utils import Heap

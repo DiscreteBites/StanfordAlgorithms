@@ -48,6 +48,16 @@ class Heap(Generic[T]):
             self.heapify_down(r)
         return
     
+    def compare_keys(self, key_1: int, tie_1: int, key_2: int, tie_2: int):
+        if self.order == "max":
+            if key_1 == key_2:
+                return tie_1 > tie_2
+            return key_1 > key_2
+        else:
+            if key_1 == key_2:
+                    return tie_1 < tie_2
+            return key_1 < key_2
+    
     def compare_items(self, item_1: T, item_2: T):
         if self.order == "max":
             if self.keys[item_1] == self.keys[item_2]:
@@ -188,6 +198,31 @@ class Heap(Generic[T]):
 
         return
     
+    def rekey(self, item: T, new_key: int=None, new_tie_break: int=None):
+        idx = self.index[item]
+
+        old_key = self.keys[item]
+        old_tie_break = self.tie_breaks[item]
+
+        if old_key == new_key and old_tie_break == new_tie_break:
+            return
+
+        if new_key == None:
+            new_key = item
+
+        if new_tie_break == None:
+            new_tie_break = new_key
+        
+        self.keys[item] = new_key
+        self.tie_breaks[item] = new_tie_break
+
+        if self.compare_keys(old_key, old_tie_break, new_key, new_tie_break):
+            self.heapify_down(idx)
+        else:
+            self.heapify_up(idx)
+        
+        return
+    
     def validate(self):
 
         def report():
@@ -249,14 +284,23 @@ class Heap(Generic[T]):
         random_inserts = random.sample(range(1, num_items*3), num_items)
         random_keys = {k: random.random() for k in random_inserts}
 
+        item_split = num_items //2
+
+        build_set = random_inserts[:item_split]
+        
         self.build_heap(
-            random_inserts,
+            build_set,
             random_keys
         )
         
+        print(f'Build: {"PASSED" if self.validate() else "FAILED"}')
+
+        for i, key in zip(random_inserts[item_split:], random_keys):
+            self.insert(i, key)
+
         print(f'Insert: {"PASSED" if self.validate() else "FAILED"}')
         
-        for i in random.sample(random_inserts, num_items // 2):
+        for i in random.sample(random_inserts, num_items // 3):
             self.delete(i)
 
         print(f'Delete: {"PASSED" if self.validate() else "FAILED"}')
@@ -264,42 +308,7 @@ class Heap(Generic[T]):
         self.extract_lead()
         print(f'Extract Lead: {"PASSED" if self.validate() else "FAILED"}')
 
-def dijkstra(g: dict[int, list[Tuple[int, int]]], startNode: int):
-    '''
-    Runs Dijkstras on a graph g from a given start node
+        for i in random.sample(self.arr, num_items // 10):
+            self.rekey(i, random.random())
 
-    g = { tail: (head, cost) }
-
-    Returns (closest node, edge), { node: score }
-    '''
-    nodeHeap = Heap[int](type="min")
-    processedNodes = {1: 0}
-    closest_node = None
-
-    for tail, edges in g.items():
-        if tail == startNode:
-            for edge in edges:
-                head, weight = edge
-                nodeHeap.insert(head, weight)
-        elif tail not in nodeHeap:
-            nodeHeap.insert(tail, np.Inf)
-
-    while len(processedNodes.keys()) < len(g.keys()):
-        
-        greedy_node, greedy_score = nodeHeap.extract_lead()
-        processedNodes[greedy_node] = greedy_score
-
-        if closest_node is None or greedy_score < closest_node[1]:
-            closest_node = (greedy_node, greedy_score)
-        
-        for edge in g[greedy_node]:
-            head, weight = edge
-            
-            if head in nodeHeap:
-                old_key = nodeHeap.keys[head]
-                nodeHeap.delete(head)
-                
-                new_key = min(old_key, greedy_score + weight)
-                nodeHeap.insert(head, new_key)
-    
-    return closest_node, processedNodes
+        print(f'Rekey: {"PASSED" if self.validate() else "FAILED"}')
